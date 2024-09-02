@@ -8,7 +8,19 @@ namespace NorthwindRestApi.Controllers
     public class CustomersController : ControllerBase
     {
         //Alustetaan tietokantayhteys, eli luodaan instanssi luokasta minkä takana on osaavuus käyttää tietokantaa
-        NorthwindOriginalContext db = new NorthwindOriginalContext(); //voisi olla myös pelkkä = new(); ja tarkottaisi samaa asiaa
+
+        //PERINTEINEN TAPA:
+        //NorthwindOriginalContext db = new NorthwindOriginalContext(); //voisi olla myös pelkkä = new(); ja tarkottaisi samaa asiaa
+
+        //DEPENDENCY INJEKTION TAPA:
+        private NorthwindOriginalContext db;
+
+        public CustomersController(NorthwindOriginalContext dbparametri)
+        {
+            db = dbparametri;
+        }
+
+
 
         //Hakee kaikki asiakkaat:
         [HttpGet]
@@ -80,15 +92,54 @@ namespace NorthwindRestApi.Controllers
                     db.Customers.Remove(asiakas); //Remove-metodissa annetaan koko objekti parametrinä
                     db.SaveChanges();
                     return Ok("Asiakas " + asiakas.CompanyName + " poistettu.");
-                }
-                else
-                {
-                    return NotFound("Asiakasta id:llä " + id + " ei löytynyt.");
-                }
+                }                               
+                return NotFound("Asiakasta id:llä " + id + " ei löytynyt.");
+                
             }
             catch (Exception e)
             {
                 return BadRequest(e.InnerException);
+            }
+        }
+
+        //Asiakkaan muokkaus
+        [HttpPut("{id}")]
+        public ActionResult EditCustomer(string id, [FromBody]Customer customer)
+        {
+            var asiakas = db.Customers.Find(id);
+            if (asiakas != null) 
+            {
+                asiakas.CompanyName = customer.CompanyName;
+                asiakas.Address = customer.Address;
+                asiakas.ContactName = customer.ContactName;
+                asiakas.Country = customer.Country;
+                asiakas.City = customer.City;
+                asiakas.PostalCode = customer.PostalCode;
+                asiakas.Phone = customer.Phone;
+                asiakas.Fax = customer.Fax;
+                asiakas.Region = customer.Region;
+
+                db.SaveChanges();
+                return Ok("Muokattu asiakasta " + asiakas.CompanyName);
+            }
+            return NotFound("Asiakasta ei löytynyt id:llä " + id);
+        }
+
+        // Hakee nimen osalla: /api/companyname/hakusana
+        [HttpGet("companyname/{cname}")]
+        public ActionResult GetByName(string cname)
+        {
+            try
+            {
+                var cust = db.Customers.Where(c => c.CompanyName.Contains(cname));
+                //var cust = from c in db.Customers where c.CompanyName.Contains(cname) select c; <-- sama mutta traditional (linq-kysely)
+                
+                // var cust = db.Customers.Where(c => c.CompanyName == cname); <--- perfect match
+                return Ok(cust);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
