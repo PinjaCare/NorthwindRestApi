@@ -13,8 +13,58 @@ namespace NorthwindRestApi.Controllers
         [HttpGet]
         public ActionResult GetAllCustomers()
         {
-            var asiakkaat = db.Customers.ToList();
-            return Ok(asiakkaat);
+            try
+            {
+                var asiakkaat = db.Customers.ToList();
+                return Ok(asiakkaat);
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Tapahtui virhe. Lue lisää: " + e.InnerException); //InnerException yleensä hyödyllisin, joka kertoo virheestä tarkemmin kuin e.Message
+            }           
+        }
+
+        //Hakee YHDEN asiakkaan pääavaimella:
+        
+        [HttpGet("{id}")]
+        //MYÖS NÄIN VOI TEHDÄ:
+        //[HttpGet]       
+        //[Route("{id}")]
+        public ActionResult GetOneCustomerById(string id)
+        {
+            try
+            {
+                var asiakas = db.Customers.Find(id); //Find:lla voi pääavaimen perusteella etsiä 
+                if (asiakas != null) //if-ehdoissa kannattaa ensimmäiseksi käsitellä kaikista todennäköisin vaihtoehto, tällä säästetään tietokoneen kapasiteettia
+                {
+                    return Ok(asiakas); //kontrolleri-metodit automaattisesti konvertoi json-muotoon lähetettävän datan
+                }
+                else
+                {
+                    //return BadRequest("Asiakasta id:llä " + id + "ei löydy.");
+                    return NotFound($"Asiakasta id:llä {id} ei löydy"); //string interpolation - muuttujien ja stringien yhdistely
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Tapahtui virhe. Lue lisää: " + e); //vaihtelun vuoksi pelkkä e eikä e.InnerException
+            }
+        }
+
+        //Uuden lisääminen
+        [HttpPost]
+        public ActionResult AddNew([FromBody] Customer cust)
+        {
+            try
+            {
+                db.Customers.Add(cust);
+                db.SaveChanges();
+                return Ok($"Lisättiin uusi asiakas {cust.CompanyName} from {cust.City}"); //interpolation
+            }
+            catch(Exception e)
+            {
+                return BadRequest("Tapahtui virhe. Lue lisää: " + e.InnerException);
+            }
         }
     }
 }
