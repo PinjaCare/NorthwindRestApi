@@ -9,6 +9,7 @@ namespace NorthwindRestApi.Controllers
     {
         //Alustetaan tietokantayhteys, eli luodaan instanssi luokasta minkä takana on osaavuus käyttää tietokantaa
         NorthwindOriginalContext db = new NorthwindOriginalContext(); //voisi olla myös pelkkä = new(); ja tarkottaisi samaa asiaa
+
         //Hakee kaikki asiakkaat:
         [HttpGet]
         public ActionResult GetAllCustomers()
@@ -21,11 +22,10 @@ namespace NorthwindRestApi.Controllers
             catch (Exception e)
             {
                 return BadRequest("Tapahtui virhe. Lue lisää: " + e.InnerException); //InnerException yleensä hyödyllisin, joka kertoo virheestä tarkemmin kuin e.Message
-            }           
+            }
         }
 
-        //Hakee YHDEN asiakkaan pääavaimella:
-        
+        //Hakee YHDEN asiakkaan pääavaimella:       
         [HttpGet("{id}")]
         //MYÖS NÄIN VOI TEHDÄ:
         //[HttpGet]       
@@ -51,7 +51,7 @@ namespace NorthwindRestApi.Controllers
             }
         }
 
-        //Uuden lisääminen
+        //Uuden lisääminen:
         [HttpPost]
         public ActionResult AddNew([FromBody] Customer cust)
         {
@@ -61,10 +61,37 @@ namespace NorthwindRestApi.Controllers
                 db.SaveChanges();
                 return Ok($"Lisättiin uusi asiakas {cust.CompanyName} from {cust.City}"); //interpolation
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return BadRequest("Tapahtui virhe. Lue lisää: " + e.InnerException);
             }
         }
+
+        //Asiakkaan poistaminen:
+        [HttpDelete("{id}")]
+        public ActionResult Delete(string id)
+        {
+            try
+            {
+                var asiakas = db.Customers.Find(id);
+
+                if (asiakas != null) //Jos id:llä löytyy asiakas tietokannasta
+                {
+                    db.Customers.Remove(asiakas); //Remove-metodissa annetaan koko objekti parametrinä
+                    db.SaveChanges();
+                    return Ok("Asiakas " + asiakas.CompanyName + " poistettu.");
+                }
+                else
+                {
+                    return NotFound("Asiakasta id:llä " + id + " ei löytynyt.");
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.InnerException);
+            }
+        }
+
+
     }
 }
